@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transactions</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        const API_URL = 'https://expense-tracker-11oe.onrender.com/transactions';
+        const BALANCE_URL = 'https://expense-tracker-11oe.onrender.com/balance';
+
+        async function fetchTransactions() {
+            try {
+                const response = await fetch(API_URL);
+                if (!response.ok) throw new Error("Failed to fetch transactions");
+                const transactions = await response.json();
+                updateTable(transactions);
+                fetchBalance();
+            } catch (error) {
+                console.error("Error:", error);
+            }
+        }
+
+        async function fetchBalance() {
+            try {
+                const response = await fetch(BALANCE_URL);
+                if (!response.ok) throw new Error("Failed to fetch balance");
+                const { totalCapital, totalExpenses, remainingBalance } = await response.json();
+                
+                document.getElementById('total-capital').textContent = `Total Capital: ₹${totalCapital.toFixed(2)}`;
+                document.getElementById('total-expense').textContent = `Total Expenses: ₹${totalExpenses.toFixed(2)}`;
+                document.getElementById('balance').textContent = `Remaining Balance: ₹${remainingBalance.toFixed(2)}`;
+            } catch (error) {
+                console.error("Error:", error);
+            }
+        }
+
+        function updateTable(transactions) {
+            const tableBody = document.getElementById('transactions-body');
+            tableBody.innerHTML = '';
+            transactions.forEach(tx => {
+                const isExpense = tx.type === 'Expense';
+                const colorClass = isExpense ? 'text-red-500' : 'text-green-500';
+                const sign = isExpense ? '-' : '+';
+                tableBody.innerHTML += `<tr class="border-b text-center">
+                    <td class="p-3">${tx.id}</td>
+                    <td class="p-3">${tx.type}</td>
+                    <td class="p-3">${tx.details}</td>
+                    <td class="p-3 ${colorClass}">${sign} ₹${tx.amount}</td>
+                    <td class="p-3">${new Date(tx.date).toLocaleString()}</td>
+                    <td class="p-3"><button class="bg-red-500 text-white px-3 py-1 rounded" onclick="deleteTransaction(${tx.id})">🗑</button></td>
+                </tr>`;
+            });
+        }
+
+        async function addTransaction() {
+            const type = document.getElementById('type').value;
+            const details = document.getElementById('details').value;
+            const amount = parseFloat(document.getElementById('amount').value);
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ type, details, amount })
+                });
+                if (!response.ok) throw new Error("Failed to add transaction");
+                fetchTransactions();
+            } catch (error) {
+                console.error("Error:", error);
+            }
+        }
+
+        async function deleteTransaction(id) {
+            try {
+                const response = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+                if (!response.ok) throw new Error("Failed to delete transaction");
+                fetchTransactions();
+            } catch (error) {
+                console.error("Error:", error);
+            }
+        }
+
+        window.onload = fetchTransactions;
+    </script>
+</head>
+<body class="bg-gradient-to-r from-purple-500 to-blue-500 p-6 min-h-screen flex justify-center items-center">
+    <div class="w-full max-w-4xl bg-white p-6 shadow-lg rounded-lg">
+        <h2 class="text-2xl font-bold mb-4 text-center">💰 Transactions</h2>
+
+        <div class="text-center mb-4">
+            <p id="total-capital" class="text-green-600 font-semibold"></p>
+            <p id="total-expense" class="text-red-600 font-semibold"></p>
+            <p id="balance" class="text-lg font-semibold"></p>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full border-collapse border border-gray-300 text-sm sm:text-base">
+                <thead>
+                    <tr class="bg-gray-200 text-center">
+                        <th class="p-3">ID</th>
+                        <th class="p-3">Type</th>
+                        <th class="p-3">Details</th>
+                        <th class="p-3">Amount</th>
+                        <th class="p-3">Date</th>
+                        <th class="p-3">Action</th>
+                    </tr>
+                </thead>
+                <tbody id="transactions-body"></tbody>
+            </table>
+        </div>
+
+        <h3 class="text-xl font-semibold mt-6 text-center">➕ Add Transaction</h3>
+        <div class="mt-4 space-y-3">
+            <select id="type" class="w-full p-2 border rounded">
+                <option value="Capital">Capital</option>
+                <option value="Expense">Expense</option>
+            </select>
+            <input type="text" id="details" placeholder="Details" class="w-full p-2 border rounded">
+            <input type="number" id="amount" step="0.01" placeholder="Amount" class="w-full p-2 border rounded">
+            <button class="bg-blue-500 text-white px-4 py-2 rounded w-full" onclick="addTransaction()">Add Transaction</button>
+        </div>
+    </div>
+</body>
+</html>
