@@ -65,6 +65,20 @@
                     body: JSON.stringify({ type, details, amount })
                 });
                 if (!response.ok) throw new Error("Failed to add transaction");
+
+                // Show success message
+                document.getElementById('success-message').style.display = 'block';
+
+                // Hide success message after 3 seconds
+                setTimeout(() => {
+                    document.getElementById('success-message').style.display = 'none';
+                }, 3000);
+
+                // Clear form inputs
+                document.getElementById('type').value = 'Capital';
+                document.getElementById('details').value = '';
+                document.getElementById('amount').value = '';
+
                 fetchTransactions();
             } catch (error) {
                 console.error("Error:", error);
@@ -109,6 +123,11 @@
                 <tbody id="transactions-body"></tbody>
             </table>
         </div>
+
+        <!-- Success message -->
+        <p id="success-message" class="mt-4 text-green-600 font-semibold text-center hidden">
+            ✅ Transaction added successfully!
+        </p>
 
         <h3 class="text-xl font-semibold mt-6 text-center">➕ Add Transaction</h3>
         <div class="mt-4 space-y-3">
